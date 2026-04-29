@@ -1,61 +1,143 @@
-let inp = document.querySelector("input");
-let list = document.querySelector("#list");
-let h1 = document.querySelector("h1");
-let addbtn = document.querySelector("button");
+// Improved todo app version 
 
-let todoTasks = [];
+const input = document.querySelector('#input');
+const addBtn = document.querySelector('#addBtn');
+const list = document.querySelector('#list');
 
-inp.addEventListener("keydown", (e)=>{
-    if (e.key === "Enter") {
-      addTasks();
-    }
-  })
+let allTask = [];
 
-addbtn.addEventListener("click", addTasks)
-
-function addTasks(){
-  let inpVal = inp.value.trim();
+const addTodo = () => {
+  let inputVal = input.value;
   
-  if (inpVal === ""){
-    h1.textContent = "Please enter a task";
+  if (inputVal.trim() === "") {
+    alert('Please Enter some task');
     return;
-  } else {
-    h1.textContent = "";
+  };
+  
+  let todo = {
+    id: Date.now(),
+    title: inputVal,
+    completed: false
+  };
+
+  allTask.push(todo);
+  createTodo(todo);
+  saveTask();
+  input.value = "";
+};
+
+function createTodo(task){
+   let li = document.createElement('li');
+   
+   let span = document.createElement('span');
+   span.textContent = task.title;
+   
+   if (task.completed) {
+    li.classList.add('mark');
   }
-  
-  todoTasks.push(inpVal);
-  
-  localStorage.setItem('tasks', JSON.stringify(todoTasks));
-  
-  let li = document.createElement("li");
-  li.textContent = inpVal;
-  li.dataset.task = inpVal;
-  
-  list.appendChild(li);
-  
-  li.addEventListener("click", ()=>{
-    li.classList.toggle("strike-through");
-  })
-  
-  let deletebtn = document.createElement("button");
-  deletebtn.textContent = "Delete";
-  
-  li.appendChild(deletebtn);
-  
-  deletebtn.addEventListener("click", (e)=>{
-    e.stopPropagation();
+   
+   li.addEventListener('click', ()=>{
+    task.completed = !task.completed;
+    li.classList.toggle('mark');
+    saveTask();
+  }
+);
+   
+   let deleteBtn = document.createElement('button');
+   deleteBtn.textContent = 'Delete';
+   
+   let editBtn = document.createElement('button');
+   editBtn.textContent = 'Edit';
+   
+   // DELETE BUTTON FUNCTIONALITY
+   deleteBtn.addEventListener('click',deleteTodo);
+   
+   editBtn.addEventListener('click',editTodo);
+   
+   function deleteTodo(e){
+     e.stopPropagation();
+     allTask = allTask.filter(elem => elem.id !== task.id)
+     li.remove();
+     saveTask();
+   }
+   
+   function editTodo(ve){
+     ve.stopPropagation();
+     
+    let editVal = prompt('Enter your edited task');
     
-    let taskText = li.dataset.task;
-    let index = todoTasks.indexOf(taskText);
-    
-    if (index !== -1) {
-      todoTasks.splice(index, 1);
+    if (editVal === null) {
+      return;
     }
     
-    localStorage.setItem('tasks', JSON.stringify(todoTasks));
-    
-    li.remove();
-  })
-  
-  inp.value = "";
+    if (editVal.trim() === "") {
+      alert('Enter some task');
+      return;
+    } else {
+      task.title = editVal;
+      span.textContent = editVal;
+      saveTask();
+    }
+   };
+   
+   li.appendChild(span);
+   li.appendChild(editBtn);
+   li.appendChild(deleteBtn);
+   list.appendChild(li);
 }
+
+function saveTask(){
+  localStorage.setItem('todoData', JSON.stringify(allTask));
+};
+function loadTask(){
+  let savedTask = localStorage.getItem('todoData');
+  
+  if (savedTask) {
+    allTask = JSON.parse(savedTask);
+    list.innerHTML = "";
+    
+    for(let task of allTask){
+      createTodo(task);
+    }
+  }
+};
+loadTask();
+addBtn.addEventListener('click', addTodo);
+
+let allBtn = document.querySelector('#allBtn');
+let completedBtn = document.querySelector('#completedBtn');
+let pendingBtn = document.querySelector('#pendingBtn');
+
+let addFilter = (arr) => {
+  list.innerHTML = "";
+  for(let task of arr){
+    createTodo(task);
+  }
+}
+
+let completeFilter = (arr) => {
+  list.innerHTML = "";
+  let completeView = arr.filter(elem => elem.completed === true);
+  for(let task of completeView){
+    createTodo(task);
+  };
+};
+
+let pendingFilter = (arr) => {
+  list.innerHTML = "";
+  let pendingView = arr.filter(elem => elem.completed === false);
+  for(let task of pendingView){
+    createTodo(task);
+  };
+};
+
+allBtn.addEventListener('click',()=>{
+  addFilter(allTask);
+});
+
+completedBtn.addEventListener('click',()=>{
+  completeFilter(allTask);
+});
+
+pendingBtn.addEventListener('click', ()=>{ pendingFilter(allTask);
+});
